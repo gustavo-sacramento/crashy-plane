@@ -13,12 +13,18 @@ enum GameState {
     case dead
 }
 
+var highScore = 0
+
 class GameScene: SKScene, SKPhysicsContactDelegate {
     var player : SKSpriteNode!
     var scoreLabel: SKLabelNode!
+    var highScoreLabel: SKLabelNode!
     var backgroundMusic : SKAudioNode!
     var logo: SKSpriteNode!
     var gameOver: SKSpriteNode!
+    let rockTexture = SKTexture(imageNamed: "rock")
+    var rockPhysics = SKPhysicsBody()
+    let explosion = SKEmitterNode(fileNamed: "PlayerExplosion")
     
     var gameState = GameState.showingLogo
     
@@ -34,11 +40,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         createSky()
         createBackground()
         createGround()
-//        startRocks()
         createLogos()
         createScore()
         physicsWorld.gravity = CGVector(dx: 0.0, dy: -5.0)
         physicsWorld.contactDelegate = self
+        rockPhysics = SKPhysicsBody(texture: rockTexture, size: rockTexture.size())
         
         if let musicURL = Bundle.main.url(forResource: "music", withExtension: "m4a") {
             backgroundMusic = SKAudioNode(url: musicURL)
@@ -68,6 +74,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
         case .dead:
             if let scene = GameScene(fileNamed: "GameScene") {
+                if score > highScore {
+                    highScore = score
+                }
+                
                 scene.scaleMode = .aspectFill
                 let transition = SKTransition.moveIn(with: SKTransitionDirection.right, duration: 1)
                 view?.presentScene(scene, transition: transition)
@@ -203,13 +213,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         let rockTexture = SKTexture(imageNamed: "rock")
         
         let topRock = SKSpriteNode(texture: rockTexture)
-        topRock.physicsBody = SKPhysicsBody(texture: rockTexture, size: rockTexture.size())
+        topRock.physicsBody = rockPhysics.copy() as? SKPhysicsBody
         topRock.physicsBody?.isDynamic = false
         topRock.zRotation = .pi
         topRock.xScale = -1.0
         
         let bottomRock = SKSpriteNode(texture: rockTexture)
-        bottomRock.physicsBody = SKPhysicsBody(texture: rockTexture, size: rockTexture.size())
+        bottomRock.physicsBody = rockPhysics.copy() as? SKPhysicsBody
         bottomRock.physicsBody?.isDynamic = false
         
         topRock.zPosition = -20
@@ -261,12 +271,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     func createScore() {
         scoreLabel = SKLabelNode(fontNamed: "Optima-ExtraBlack")
         scoreLabel.fontSize = 24
+        highScoreLabel = SKLabelNode(fontNamed: "Optima-ExtraBlack")
+        highScoreLabel.fontSize = 24
         
         scoreLabel.position = CGPoint(x: frame.midX, y: frame.maxY - 60)
+        highScoreLabel.position = CGPoint(x: frame.midX, y: frame.maxY - 80)
         scoreLabel.text = "SCORE: 0"
+        highScoreLabel.text = "HIGH SCORE: \(highScore)"
         scoreLabel.fontColor = UIColor.black
+        highScoreLabel.fontColor = UIColor.red
         
         addChild(scoreLabel)
+        addChild(highScoreLabel)
     }
     
     func createLogos() {
